@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Serviços — Agenda da Mãe{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Serviços</h1>
+    <a href="{{ url_for('servicos.novo') }}" class="btn btn-primary">+ Novo serviço</a>
+</div>
+
+<div class="card">
+    {% if servicos %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th>Preço</th>
+                <th>Duração</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in servicos %}
+            <tr class="{{ '' if s.ativo else 'inativo' }}">
+                <td>{{ s.nome }}</td>
+                <td>{{ s.descricao or '-' }}</td>
+                <td>{{ 'R$ %.2f'|format(s.preco|float)|replace('.', ',') }}</td>
+                <td>{{ s.duracao_min }} min</td>
+                <td>
+                    {% if s.ativo %}
+                    <span class="badge badge-ativo">Ativo</span>
+                    {% else %}
+                    <span class="badge badge-inativo">Inativo</span>
+                    {% endif %}
+                </td>
+                <td class="actions">
+                    <a href="{{ url_for('servicos.editar', id=s.id) }}" class="btn btn-sm">Editar</a>
+                    <form method="POST" action="{{ url_for('servicos.toggle', id=s.id) }}" style="display:inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm">{{ 'Desativar' if s.ativo else 'Ativar' }}</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="muted">Nenhum serviço cadastrado.</p>
+    {% endif %}
+</div>
+{% endblock %}

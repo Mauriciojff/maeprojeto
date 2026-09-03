@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Clientes — Agenda da Mãe{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Clientes</h1>
+    <a href="{{ url_for('clientes.novo') }}" class="btn btn-primary">+ Novo cliente</a>
+</div>
+
+<form method="GET" action="{{ url_for('clientes.listar') }}" class="search-bar">
+    <input type="text" name="q" value="{{ busca }}" placeholder="Buscar por nome..." class="search-input">
+    <button type="submit" class="btn">Buscar</button>
+</form>
+
+<div class="card">
+    {% if clientes %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Telefone</th>
+                <th>Email</th>
+                <th>Cadastro</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in clientes %}
+            <tr>
+                <td>{{ c.nome }}</td>
+                <td>{{ c.telefone or '-' }}</td>
+                <td>{{ c.email or '-' }}</td>
+                <td>{{ c.data_cadastro.strftime('%d/%m/%Y') if c.data_cadastro else '-' }}</td>
+                <td class="actions">
+                    <a href="{{ url_for('clientes.editar', id=c.id) }}" class="btn btn-sm">Editar</a>
+                    <button type="button" class="btn btn-sm btn-danger"
+                            onclick="confirmarExclusao('{{ url_for('clientes.excluir', id=c.id) }}', 'Excluir cliente {{ c.nome }}?')">Excluir</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="muted">Nenhum cliente encontrado.</p>
+    {% endif %}
+</div>
+
+<!-- Formulário oculto para exclusão via POST -->
+<form id="form-excluir" method="POST" style="display:none">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmarExclusao(url, msg) {
+    if (confirm(msg)) {
+        const form = document.getElementById('form-excluir');
+        form.action = url;
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if agendamento else 'Novo' }} Agendamento — Agenda da Mãe{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ 'Editar Agendamento' if agendamento else 'Novo Agendamento' }}</h1>
+    <a href="{{ url_for('agendamentos.listar') }}" class="btn">← Voltar</a>
+</div>
+
+<div class="card form-card">
+    <form method="POST"
+          action="{{ url_for('agendamentos.editar', id=agendamento.id) if agendamento else url_for('agendamentos.novo') }}"
+          class="form"
+          id="form-agendamento">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-group">
+            <label for="cliente_id">Cliente *</label>
+            <select id="cliente_id" name="cliente_id" required>
+                <option value="">Selecione...</option>
+                {% for c in clientes %}
+                <option value="{{ c.id }}" {{ 'selected' if (form.get('cliente_id')|string == c.id|string) or (agendamento and agendamento.cliente_id == c.id) else '' }}>
+                    {{ c.nome }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="servico_id">Serviço *</label>
+            <select id="servico_id" name="servico_id" required>
+                <option value="">Selecione...</option>
+                {% for s in servicos %}
+                <option value="{{ s.id }}"
+                        data-duracao="{{ s.duracao_min }}"
+                        {{ 'selected' if (form.get('servico_id')|string == s.id|string) or (agendamento and agendamento.servico_id == s.id) else '' }}>
+                    {{ s.nome }} ({{ s.duracao_min }} min — R$ {{ '%.2f'|format(s.preco|float)|replace('.', ',') }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="data">Data *</label>
+            <input type="date" id="data" name="data" required
+                   value="{{ form.get('data','') or (agendamento.data.strftime('%Y-%m-%d') if agendamento and agendamento.data else '') }}">
+        </div>
+
+        <div class="form-group">
+            <label for="horario">Horário *</label>
+            <select id="horario" name="horario" required>
+                <option value="">Selecione...</option>
+                {% for h in horarios %}
+                <option value="{{ h }}" {{ 'selected' if form.get('horario') == h or (agendamento and agendamento.horario == h) else '' }}>{{ h }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                {% for s in ['pendente', 'confirmada', 'realizada', 'cancelada', 'nao_vai'] %}
+                <option value="{{ s }}" {{ 'selected' if (form.get('status') == s) or (agendamento and agendamento.status == s) else '' }}>
+                    {{ s|replace('_', ' ') }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="obs">Observações</label>
+            <textarea id="obs" name="obs" rows="3">{{ form.get('obs','') or (agendamento.obs if agendamento else '') }}</textarea>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Salvar</button>
+            <a href="{{ url_for('agendamentos.listar') }}" class="btn">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const dataInput = document.getElementById('data');
+    const servicoSelect = document.getElementById('servico_id');
+    const horarioSelect = document.getElementById('horario');
+
+    // Atualizar horários disponíveis quando data/serviço mudam
+    async function atualizarHorarios() {
+        const data = dataInput.value;
+        const servicoId = servicoSelect.value;
+        if (!data || !servicoId) return;
+
+        // Preservar seleção atual se houver agendamento
+        const valorAtual = horarioSelect.value;
+
+        try {
+            const resp = await fetch(`/agendamentos/api/disponiveis?data=${data}&servico_id=${servicoId}`);
+            const dados = await resp.json();
+            horarioSelect.innerHTML = '<option value="">Selecione...</option>';
+            if (dados.horarios) {
+                dados.horarios.forEach(h => {
+                    const opt = document.createElement('option');
+                    opt.value = h;
+                    opt.textContent = h;
+                    horarioSelect.appendChild(opt);
+                });
+            }
+            // Tentar manter seleção se ainda disponível
+            if (valorAtual && Array.from(horarioSelect.options).some(o => o.value === valorAtual)) {
+                horarioSelect.value = valorAtual;
+            }
+        } catch (e) {
+            console.error('Erro ao buscar horários:', e);
+        }
+    }
+
+    dataInput.addEventListener('change', atualizarHorarios);
+    servicoSelect.addEventListener('change', atualizarHorarios);
+});
+</script>
+{% endblock %}
+

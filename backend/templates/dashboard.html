@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Agenda da Mãe{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Dashboard</h1>
+    <a href="{{ url_for('agendamentos.novo') }}" class="btn btn-primary">+ Novo agendamento</a>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">👤</div>
+        <div class="stat-info">
+            <span class="stat-value">{{ total_clientes }}</span>
+            <span class="stat-label">Clientes ativos</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-info">
+            <span class="stat-value">{{ agendamentos_hoje|length }}</span>
+            <span class="stat-label">Agendamentos hoje</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-info">
+            <span class="stat-value">{{ formatar_moeda(faturamento_hoje) }}</span>
+            <span class="stat-label">Faturamento hoje</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-info">
+            <span class="stat-value">{{ formatar_moeda(faturamento_mes) }}</span>
+            <span class="stat-label">Faturamento do mês</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🗓️</div>
+        <div class="stat-info">
+            <span class="stat-value">{{ formatar_moeda(faturamento_ano) }}</span>
+            <span class="stat-label">Faturamento do ano</span>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="card">
+        <div class="card-header">
+            <h2>Agendamentos de Hoje</h2>
+            <a href="{{ url_for('agenda.visualizar') }}" class="btn btn-sm">Ver agenda</a>
+        </div>
+        {% if agendamentos_hoje %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Horário</th>
+                    <th>Cliente</th>
+                    <th>Serviço</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ag in agendamentos_hoje %}
+                <tr>
+                    <td>{{ ag.horario }}</td>
+                    <td>{{ ag.cliente.nome if ag.cliente else '-' }}</td>
+                    <td>{{ ag.servico.nome if ag.servico else '-' }}</td>
+                    <td><span class="badge badge-{{ ag.status }}">{{ ag.status|replace('_', ' ') }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="muted">Nenhum agendamento para hoje.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h2>Próximos Agendamentos</h2></div>
+        {% if proximos %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Horário</th>
+                    <th>Cliente</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ag in proximos %}
+                <tr>
+                    <td>{{ ag.data.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ ag.horario }}</td>
+                    <td>{{ ag.cliente.nome if ag.cliente else '-' }}</td>
+                    <td><span class="badge badge-{{ ag.status }}">{{ ag.status|replace('_', ' ') }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="muted">Nenhum agendamento futuro.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="card">
+        <div class="card-header"><h2>Serviços Mais Utilizados (mês)</h2></div>
+        {% if servicos_top %}
+        <table class="table">
+            <thead>
+                <tr><th>Serviço</th><th>Qtd</th><th>Total</th></tr>
+            </thead>
+            <tbody>
+                {% for s in servicos_top %}
+                <tr>
+                    <td>{{ s.nome }}</td>
+                    <td>{{ s.total }}</td>
+                    <td>{{ formatar_moeda(s.valor_total) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="muted">Sem dados de faturamento no mês.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h2>Status dos Agendamentos</h2></div>
+        <div class="status-stats">
+            <div class="status-item">
+                <span class="badge badge-pendente">Pendentes</span>
+                <strong>{{ stats_status['pendente'] }}</strong>
+            </div>
+            <div class="status-item">
+                <span class="badge badge-confirmada">Confirmados</span>
+                <strong>{{ stats_status['confirmada'] }}</strong>
+            </div>
+            <div class="status-item">
+                <span class="badge badge-realizada">Realizados</span>
+                <strong>{{ stats_status['realizada'] }}</strong>
+            </div>
+            <div class="status-item">
+                <span class="badge badge-cancelada">Cancelados</span>
+                <strong>{{ stats_status['cancelada'] }}</strong>
+            </div>
+            <div class="status-item">
+                <span class="badge badge-nao_vai">Não foram</span>
+                <strong>{{ stats_status['nao_vai'] }}</strong>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

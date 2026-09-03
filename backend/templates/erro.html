@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Erro {{ codigo }} — Agenda da Mãe{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-card">
+        <h1 class="error-code">{{ codigo }}</h1>
+        <p class="error-message">{{ mensagem }}</p>
+        <div class="error-actions">
+            <a href="{{ url_for('main.index') }}" class="btn btn-primary">Ir para o início</a>
+            <button onclick="history.back()" class="btn">Voltar</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

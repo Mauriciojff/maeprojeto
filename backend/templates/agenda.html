@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Agenda — Agenda da Mãe{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Agenda</h1>
+    <div class="tabs">
+        <a href="{{ url_for('agenda.visualizar', visao='dia', data=data_ref.isoformat()) }}"
+           class="tab {{ 'active' if visao == 'dia' else '' }}">Dia</a>
+        <a href="{{ url_for('agenda.visualizar', visao='semana', data=data_ref.isoformat()) }}"
+           class="tab {{ 'active' if visao == 'semana' else '' }}">Semana</a>
+        <a href="{{ url_for('agenda.visualizar', visao='mes', data=data_ref.isoformat()) }}"
+           class="tab {{ 'active' if visao == 'mes' else '' }}">Mês</a>
+    </div>
+</div>
+
+<div class="agenda-nav">
+    <a href="{{ url_for('agenda.visualizar', visao=visao, data=(data_ref - timedelta(days=1)).isoformat()) }}"
+       class="btn btn-sm">← Anterior</a>
+    <span class="agenda-titulo">
+        {% if visao == 'dia' %}
+            {{ data_ref.strftime('%d/%m/%Y') }}
+        {% elif visao == 'semana' %}
+            {{ MESES[data_ref.month - 1] }} de {{ data_ref.year }}
+        {% else %}
+            {{ MESES[data_ref.month - 1] }} de {{ data_ref.year }}
+        {% endif %}
+    </span>
+    <div>
+        <a href="{{ url_for('agenda.visualizar', visao=visao, data=data_atual.isoformat()) }}" class="btn btn-sm">Hoje</a>
+        <a href="{{ url_for('agenda.visualizar', visao=visao, data=(data_ref + timedelta(days=1)).isoformat()) }}"
+           class="btn btn-sm">Próximo →</a>
+    </div>
+</div>
+
+<div class="card agenda-container" id="agenda-container"
+     data-url="{{ url_for('agenda.dados') }}"
+     data-visao="{{ visao }}"
+     data-data="{{ data_ref.isoformat() }}">
+    <div class="agenda-loading">Carregando agenda...</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async function () {
+    const container = document.getElementById('agenda-container');
+    const url = container.dataset.url;
+    const visao = container.dataset.visao;
+    const data = container.dataset.data;
+
+    async function carregar() {
+        try {
+            const resp = await fetch(`${url}?visao=${visao}&data=${data}`);
+            const dados = await resp.json();
+            renderizar(dados);
+        } catch (e) {
+            container.innerHTML = '<p class="muted">Erro ao carregar a agenda.</p>';
+            console.error(e);
+        }
+    }
+
+    function renderizar(dados) {
+        const dias = dados.dias;
+        const horarios = dados.horarios;
+        const ags = dados.agendamentos;
+
+        if (visao === 'mes') {
+            renderizarMes(container, dias, ags);
+            return;
+        }
+
+        // Visão dia ou semana
+        let html = '<table class="table agenda-table"><thead><tr><th>Horário</th>';
+        dias.forEach(d => {
+            const [y, m, day] = d.split('-').map(Number);
+            const nomeDia = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][(new Date(y, m - 1, day).getDay())];
+            html += `<th>${nomeDia} ${day}/${m}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+
+        horarios.forEach(h => {
+            html += `<tr><td class="agenda-horario">${h}</td>`;
+            dias.forEach(d => {
+                const lista = (ags[d] || []).filter(a => a.horario === h);
+                html += '<td class="agenda-cell">';
+                if (lista.length) {
+                    lista.forEach(a => {
+                        html += `<div class="agenda-item badge-${a.status}">
+                            <a href="/agendamentos/${a.id}/editar">
+                                <strong>${a.cliente}</strong><br>
+                                <small>${a.servico} — ${a.horario}</small><br>
+                                <small class="agenda-status">${a.status.replace('_', ' ')}</small>
+                            </a>
+                        </div>`;
+                    });
+                }
+                html += '</td>';
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function renderizarMes(container, dias, ags) {
+        let html = '<table class="table agenda-mes"><thead><tr>';
+        ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].forEach(d => {
+            html += `<th>${d}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+
+        // Encontrar primeiro dia da semana do mês
+        const primeiraData = new Date(dias[0] + 'T00:00:00');
+        const diaSemanaInicial = primeiraData.getDay();
+        let celulas = [];
+
+        for (let i = 0; i < diaSemanaInicial; i++) celulas.push('');
+        dias.forEach(d => celulas.push(d));
+        // Preencher até completar semanas
+        while (celulas.length % 7 !== 0) celulas.push('');
+
+        for (let i = 0; i < celulas.length; i += 7) {
+            html += '<tr>';
+            for (let j = 0; j < 7; j++) {
+                const dia = celulas[i + j];
+                if (!dia) {
+                    html += '<td class="agenda-cell vazio"></td>';
+                } else {
+                    const [, , day] = dia.split('-').map(Number);
+                    const lista = ags[dia] || [];
+                    html += `<td class="agenda-cell">
+                        <div class="agenda-mes-dia">${day}</div>`;
+                    lista.forEach(a => {
+                        html += `<div class="agenda-item badge-${a.status}">
+                            <small>${a.horario} — ${a.cliente}</small>
+                        </div>`;
+                    });
+                    html += '</td>';
+                }
+            }
+            html += '</tr>';
+        }
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    carregar();
+});
+</script>
+{% endblock %}

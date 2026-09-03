@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Agendamentos — Agenda da Mãe{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Agendamentos</h1>
+    <a href="{{ url_for('agendamentos.novo') }}" class="btn btn-primary">+ Novo agendamento</a>
+</div>
+
+<div class="card">
+    <form method="GET" action="{{ url_for('agendamentos.listar') }}" class="filter-bar">
+        <div class="form-group-inline">
+            <input type="date" name="data" value="{{ data_filtro }}">
+        </div>
+        <div class="form-group-inline">
+            <select name="status">
+                <option value="">Todos os status</option>
+                {% for s in ['pendente', 'confirmada', 'realizada', 'cancelada', 'nao_vai'] %}
+                <option value="{{ s }}" {{ 'selected' if status_filtro == s else '' }}>{{ s|replace('_', ' ') }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group-inline">
+            <select name="cliente">
+                <option value="">Todos os clientes</option>
+                {% for c in clientes %}
+                <option value="{{ c.id }}" {{ 'selected' if cliente_filtro == c.id|string else '' }}>{{ c.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn">Filtrar</button>
+        <a href="{{ url_for('agendamentos.listar') }}" class="btn btn-sm">Limpar</a>
+    </form>
+</div>
+
+<div class="card">
+    {% if agendamentos %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Horário</th>
+                <th>Cliente</th>
+                <th>Serviço</th>
+                <th>Preço</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ag in agendamentos %}
+            <tr>
+                <td>{{ ag.data.strftime('%d/%m/%Y') }}</td>
+                <td>{{ ag.horario }}</td>
+                <td>{{ ag.cliente.nome if ag.cliente else '-' }}</td>
+                <td>{{ ag.servico.nome if ag.servico else '-' }}</td>
+                <td>{{ formatar_moeda(ag.preco) if ag.preco else '-' }}</td>
+                <td><span class="badge badge-{{ ag.status }}">{{ ag.status|replace('_', ' ') }}</span></td>
+                <td class="actions">
+                    <a href="{{ url_for('agendamentos.editar', id=ag.id) }}" class="btn btn-sm">Editar</a>
+                    {% if ag.status != 'realizada' and ag.status != 'cancelada' %}
+                    <form method="POST" action="{{ url_for('agendamentos.mudar_status', id=ag.id) }}" style="display:inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="status" value="realizada">
+                        <button type="submit" class="btn btn-sm btn-success">Realizada</button>
+                    </form>
+                    {% endif %}
+                    {% if ag.status != 'cancelada' %}
+                    <form method="POST" action="{{ url_for('agendamentos.cancelar', id=ag.id) }}" style="display:inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Cancelar este agendamento?')">Cancelar</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="muted">Nenhum agendamento encontrado.</p>
+    {% endif %}
+</div>
+{% endblock %}

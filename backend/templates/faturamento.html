@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Faturamento — Agenda da Mãe{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Faturamento</h1>
+</div>
+
+<div class="card">
+    <form method="GET" action="{{ url_for('faturamento.relatorio') }}" class="filter-bar">
+        <div class="form-group-inline">
+            <select name="periodo" onchange="this.form.submit()">
+                <option value="dia" {{ 'selected' if periodo == 'dia' else '' }}>Hoje</option>
+                <option value="semana" {{ 'selected' if periodo == 'semana' else '' }}>Esta semana</option>
+                <option value="mes" {{ 'selected' if periodo == 'mes' else '' }}>Este mês</option>
+                <option value="ano" {{ 'selected' if periodo == 'ano' else '' }}>Este ano</option>
+                <option value="custom" {{ 'selected' if periodo == 'custom' else '' }}>Personalizado</option>
+            </select>
+        </div>
+        <div class="form-group-inline">
+            <input type="date" name="de" value="{{ request.args.get('de', '') }}">
+        </div>
+        <div class="form-group-inline">
+            <input type="date" name="ate" value="{{ request.args.get('ate', '') }}">
+        </div>
+        <button type="submit" class="btn">Aplicar</button>
+    </form>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card stat-card-highlight">
+        <div class="stat-icon">💰</div>
+        <div class="stat-info">
+            <span class="stat-value">{{ formatar_moeda(total_periodo) }}</span>
+            <span class="stat-label">Total do período</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🧾</div>
+        <div class="stat-info">
+            <span class="stat-value">{{ total_servicos }}</span>
+            <span class="stat-label">Serviços realizados</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📈</div>
+        <div class="stat-info">
+            <span class="stat-value {% if variacao < 0 %}negativo{% endif %}">
+                {{ '%.1f'|format(variacao) }}%
+            </span>
+            <span class="stat-label">Comparado ao período anterior</span>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="card">
+        <div class="card-header"><h2>Período: {{ formatar_data_br(data_inicio) }} a {{ formatar_data_br(data_fim) }}</h2></div>
+        {% if detalhes %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Cliente</th>
+                    <th>Serviço</th>
+                    <th>Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in detalhes %}
+                <tr>
+                    <td>{{ formatar_data_br(d.data) }}</td>
+                    <td>{{ d.cliente }}</td>
+                    <td>{{ d.servico }}</td>
+                    <td>{{ formatar_moeda(d.preco) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3"><strong>Total</strong></td>
+                    <td><strong>{{ formatar_moeda(total_periodo) }}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+        {% else %}
+        <p class="muted">Nenhum registro de faturamento no período.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h2>Resumo por Serviço</h2></div>
+        {% if por_servico %}
+        <table class="table">
+            <thead>
+                <tr><th>Serviço</th><th>Qtd</th><th>Total</th></tr>
+            </thead>
+            <tbody>
+                {% for nome, info in por_servico.items() %}
+                <tr>
+                    <td>{{ nome }}</td>
+                    <td>{{ info.quantidade }}</td>
+                    <td>{{ formatar_moeda(info.total) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="muted">Sem dados no período.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h2>Faturamento por Dia</h2></div>
+    {% if por_dia %}
+    <div class="chart-bars">
+        {% set max_val = por_dia.values()|max %}
+        {% for dia, valor in por_dia.items() %}
+        <div class="chart-bar-wrap" title="{{ formatar_data_br(dia) }}: {{ formatar_moeda(valor) }}">
+            <div class="chart-bar" style="height: {{ (valor / max_val * 100) if max_val else 0 }}%">
+                <span class="chart-value">{{ formatar_moeda(valor) }}</span>
+            </div>
+            <span class="chart-label">{{ dia[8:10] }}/{{ dia[5:7] }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">Sem dados para gráfico.</p>
+    {% endif %}
+</div>
+{% endblock %}

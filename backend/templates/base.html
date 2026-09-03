@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Agenda da Mãe{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
+            {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% if session.get('usuario_id') %}
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="{{ url_for('main.dashboard') }}" class="navbar-brand">💅 Agenda da Mãe</a>
+            <button class="navbar-toggle" onclick="document.querySelector('.navbar-menu').classList.toggle('active')" aria-label="Menu">☰</button>
+            <div class="navbar-menu">
+                <a href="{{ url_for('main.dashboard') }}" class="nav-link">Dashboard</a>
+                <a href="{{ url_for('agenda.visualizar') }}" class="nav-link">Agenda</a>
+                <a href="{{ url_for('agendamentos.listar') }}" class="nav-link">Agendamentos</a>
+                <a href="{{ url_for('clientes.listar') }}" class="nav-link">Clientes</a>
+                <a href="{{ url_for('servicos.listar') }}" class="nav-link">Serviços</a>
+                <a href="{{ url_for('faturamento.relatorio') }}" class="nav-link">Faturamento</a>
+                <div class="nav-user">
+                    <span class="nav-user-name">{{ session.get('usuario_nome', 'Usuário') }}</span>
+                    <a href="{{ url_for('auth.trocar_senha') }}" class="nav-link">Trocar senha</a>
+                    <form method="POST" action="{{ url_for('auth.logout') }}" style="display:inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline">Sair</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>&copy; {{ now_year }} Agenda da Mãe — Sistema de agendamento</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
