@@ -1,1 +1,254 @@
-<h1>Hello World</h1>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda da Mãe — Manicure & Cílios</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">
+      <span class="logo-icon">💅</span>
+      <div>
+        <h1>Agenda da Mãe</h1>
+        <p>Manicure & Cílios</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-primary" id="btnNovoAgendamento">+ Novo Agendamento</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Navegação de datas -->
+    <section class="date-nav">
+      <button class="btn btn-icon" id="btnSemanaAnterior" title="Semana anterior">◀</button>
+      <div class="date-range" id="dateRange"></div>
+      <button class="btn btn-icon" id="btnSemanaProxima" title="Próxima semana">▶</button>
+      <button class="btn btn-outline" id="btnHoje">Hoje</button>
+    </section>
+
+    <!-- Abas -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="agenda">📅 Agenda</button>
+      <button class="tab" data-tab="faturamento">💰 Faturamento</button>
+      <button class="tab" data-tab="clientes">👩 Clientes</button>
+      <button class="tab" data-tab="config">⚙️ Configurações</button>
+    </nav>
+
+    <!-- ABA AGENDA -->
+    <section id="tab-agenda" class="tab-content active">
+      <div class="agenda-layout">
+        <!-- Coluna de horários -->
+        <div class="agenda">
+          <div class="agenda-header">
+            <div class="time-col">Horário</div>
+            <div class="day-cols" id="dayHeaders"></div>
+          </div>
+          <div class="agenda-body" id="agendaBody"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA FATURAMENTO -->
+    <section id="tab-faturamento" class="tab-content">
+      <div class="faturamento-cards">
+        <div class="card fat-card">
+          <h3>Hoje</h3>
+          <p class="fat-value" id="fatHoje">R$ 0,00</p>
+          <p class="fat-sub" id="fatHojeCount">0 agendamentos</p>
+        </div>
+        <div class="card fat-card">
+          <h3>Esta Semana</h3>
+          <p class="fat-value" id="fatSemana">R$ 0,00</p>
+          <p class="fat-sub" id="fatSemanaCount">0 agendamentos</p>
+        </div>
+        <div class="card fat-card">
+          <h3>Este Mês</h3>
+          <p class="fat-value" id="fatMes">R$ 0,00</p>
+          <p class="fat-sub" id="fatMesCount">0 agendamentos</p>
+        </div>
+        <div class="card fat-card">
+          <h3>Total Geral</h3>
+          <p class="fat-value" id="fatTotal">R$ 0,00</p>
+          <p class="fat-sub" id="fatTotalCount">0 agendamentos</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Faturamento por Serviço</h3>
+        <div id="fatPorServico"></div>
+      </div>
+
+      <div class="card">
+        <h3>Faturamento por Dia (últimos 14 dias)</h3>
+        <div id="fatPorDia"></div>
+      </div>
+    </section>
+
+    <!-- ABA CLIENTES -->
+    <section id="tab-clientes" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h3>Clientes Cadastradas</h3>
+          <button class="btn btn-primary btn-sm" id="btnNovoCliente">+ Nova Cliente</button>
+        </div>
+        <div class="search-box">
+          <input type="text" id="buscaCliente" placeholder="Buscar cliente...">
+        </div>
+        <div id="listaClientes"></div>
+      </div>
+    </section>
+
+    <!-- ABA CONFIGURAÇÕES -->
+    <section id="tab-config" class="tab-content">
+      <div class="card">
+        <h3>Preços dos Serviços</h3>
+        <div class="config-row">
+          <label>Manicure (R$)</label>
+          <input type="number" id="precoManicure" min="0" step="0.01">
+        </div>
+        <div class="config-row">
+          <label>Cílios (R$)</label>
+          <input type="number" id="precoCilios" min="0" step="0.01">
+        </div>
+        <div class="config-row">
+          <label>Manicure + Cílios (R$)</label>
+          <input type="number" id="precoCombo" min="0" step="0.01">
+        </div>
+        <button class="btn btn-primary" id="btnSalvarPrecos">Salvar Preços</button>
+      </div>
+
+      <div class="card">
+        <h3>Horário de Funcionamento</h3>
+        <div class="config-row">
+          <label>Abertura</label>
+          <input type="time" id="horaAbertura" value="08:00">
+        </div>
+        <div class="config-row">
+          <label>Fechamento</label>
+          <input type="time" id="horaFechamento" value="20:00">
+        </div>
+        <div class="config-row">
+          <label>Intervalo entre horários (min)</label>
+          <select id="intervaloMin">
+            <option value="30">30 min</option>
+            <option value="60" selected>60 min</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="btnSalvarHorario">Salvar Horário</button>
+      </div>
+
+      <div class="card">
+        <h3>Dados</h3>
+        <button class="btn btn-outline" id="btnExportar">📥 Exportar Dados (JSON)</button>
+        <button class="btn btn-danger" id="btnLimparDados">🗑️ Limpar Todos os Dados</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL NOVO AGENDAMENTO -->
+  <div class="modal-overlay" id="modalAgendamento">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalAgendamentoTitle">Novo Agendamento</h3>
+        <button class="modal-close" id="btnFecharModalAgendamento">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="agendamentoId">
+        <div class="form-row">
+          <label>Cliente</label>
+          <select id="agendamentoCliente"></select>
+          <button class="btn btn-outline btn-sm" id="btnAddClienteRapido">+ Nova</button>
+        </div>
+        <div class="form-row">
+          <label>Serviço</label>
+          <select id="agendamentoServico">
+            <option value="manicure">💅 Manicure</option>
+            <option value="cilios">👁️ Cílios</option>
+            <option value="combo">✨ Manicure + Cílios</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Data</label>
+          <input type="date" id="agendamentoData">
+        </div>
+        <div class="form-row">
+          <label>Horário</label>
+          <select id="agendamentoHorario"></select>
+        </div>
+        <div class="form-row">
+          <label>Status</label>
+          <select id="agendamentoStatus">
+            <option value="pendente">⏳ Pendente</option>
+            <option value="confirmada">✅ Confirmada</option>
+            <option value="nao_vai">❌ Não vai</option>
+            <option value="realizada">💯 Realizada</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Observações</label>
+          <textarea id="agendamentoObs" rows="2" placeholder="Anotações..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="btnCancelarAgendamento">Cancelar</button>
+        <button class="btn btn-primary" id="btnSalvarAgendamento">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NOVA CLIENTE -->
+  <div class="modal-overlay" id="modalCliente">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Nova Cliente</h3>
+        <button class="modal-close" id="btnFecharModalCliente">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <label>Nome</label>
+          <input type="text" id="clienteNome" placeholder="Nome da cliente">
+        </div>
+        <div class="form-row">
+          <label>Telefone (WhatsApp)</label>
+          <input type="tel" id="clienteTelefone" placeholder="(11) 99999-9999">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="btnCancelarCliente">Cancelar</button>
+        <button class="btn btn-primary" id="btnSalvarCliente">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRMAÇÃO WHATSAPP -->
+  <div class="modal-overlay" id="modalWhatsApp">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>📱 Enviar WhatsApp</h3>
+        <button class="modal-close" id="btnFecharModalWhatsApp">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Enviar mensagem de confirmação para a cliente?</p>
+        <div class="form-row">
+          <label>Mensagem</label>
+          <textarea id="whatsappMensagem" rows="4"></textarea>
+        </div>
+        <p class="hint">O WhatsApp abrirá com a mensagem pronta para envio.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="btnCancelarWhatsApp">Cancelar</button>
+        <button class="btn btn-success" id="btnEnviarWhatsApp">📱 Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
