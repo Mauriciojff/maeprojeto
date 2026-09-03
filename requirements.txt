@@ -9,6 +9,9 @@ python-dotenv==1.0.1
 Werkzeug==3.0.3
 Jinja2==3.1.4
 
+# Cliente HTTP (WhatsApp Business Cloud API)
+requests==2.32.3
+
 # Para testes
 pytest==8.2.2
 pytest-cov==5.0.0

@@ -46,7 +46,8 @@ maeprojeto/
 │   ├── database/
 │   │   ├── __init__.py           # Instância db + init_db
 │   │   ├── db.py                 # Re-export de compatibilidade
-│   │   └── models.py             # Modelos ORM
+│   │   ├── models.py             # Modelos ORM
+│   │   └── wpp_models.py         # Modelos WhatsApp (mensagens, sessões)
 │   ├── routes/
 │   │   ├── main.py               # Dashboard
 │   │   ├── auth.py               # Autenticação
@@ -55,6 +56,17 @@ maeprojeto/
 │   │   ├── agendamentos.py       # CRUD agendamentos + conflitos
 │   │   ├── agenda.py             # Calendário (dia/semana/mês)
 │   │   └── faturamento.py        # Relatórios de faturamento
+│   ├── whatsapp/                  # Integração WhatsApp Business
+│   │   ├── __init__.py           # Rotas administrativas WhatsApp
+│   │   ├── webhook.py            # Webhook (GET verificação + POST msgs)
+│   │   ├── conversation.py       # Motor de conversa (20+ estados)
+│   │   ├── api_client.py         # Cliente HTTP para Graph API
+│   │   ├── security.py           # Validação HMAC, sanitização, etc.
+│   │   ├── rate_limiter.py       # Rate limiting por telefone
+│   │   ├── session_state.py      # Gestão de sessões de conversa
+│   │   ├── notifier.py           # Notificações e comandos admin
+│   │   ├── agenda_helpers.py     # Helpers para agendamento
+│   │   └── wpp_models.py         # Alias para database/wpp_models.py
 │   ├── static/
 │   │   ├── css/style.css         # Estilos
 │   │   └── js/main.js            # JavaScript
@@ -123,4 +135,81 @@ python -m pytest backend/tests -v
 | `HORA_FECHAMENTO`   | `20:00`               | Fechamento                         |
 | `INTERVALO_MIN`     | `60`                  | Intervalo entre horários (min)     |
 | `WHATSAPP_DDI`      | `55`                  | DDI para links wa.me               |
+| `WHATSAPP_TOKEN`    | (vazio)               | Token de acesso Meta (Cloud API)   |
+| `WHATSAPP_PHONE_NUMBER_ID` | (vazio)       | ID do número de telefone da empresa |
+| `WHATSAPP_VERIFY_TOKEN` | (vazio)           | Token de verificação do webhook    |
+| `WHATSAPP_WEBHOOK_SECRET` | (vazio)        | Segredo HMAC-SHA256 do webhook     |
+| `ADMIN_WHATSAPP_NUMBERS` | (vazio)         | Números admin (separados por vírgula) |
+| `WHATSAPP_DRY_RUN` | `false`               | Simular envios (true para dev/test) |
+| `WHATSAPP_RATE_LIMIT_WINDOW` | `60`        | Janela de rate limit (segundos)     |
+| `WHATSAPP_RATE_LIMIT_MAX` | `60`            | Máximo de msgs por janela          |
 | `CSRF_ENABLED`      | `true`                | Proteção CSRF                      |
+---
+
+## Integração WhatsApp Business Cloud API
+
+O sistema inclui integração completa com o WhatsApp Business Cloud API,
+permitindo que clientes agendem, cancelem e remarquem compromissos
+diretamente pelo WhatsApp.
+
+### Fluxo do Webhook
+
+1. **Meta envia GET** `/api/whatsapp/webhook` → verificação do `hub.verify_token`
+2. **Meta envia POST** `/api/whatsapp/webhook` → mensagens recebidas
+3. Validação de assinatura HMAC-SHA256 (`X-Hub-Signature-256`)
+4. Rate limiting por telefone remetente
+5. Roteamento via `conversation.py` (20+ estados)
+
+### Configuração na Meta (Meta for Developers)
+
+1. Criar um app em [developers.facebook.com](https://developers.facebook.com/)
+2. Adicionar o produto **WhatsApp**
+3. Configurar o webhook com a URL do seu servidor:
+   - **URL:** `https://seudominio.com/api/whatsapp/webhook`
+   - **Verify Token:** o valor de `WHATSAPP_VERIFY_TOKEN`
+4. Subscrever eventos: `messages`, `messaging_postbacks`
+5. Configurar o **App Secret** como `WHATSAPP_WEBHOOK_SECRET`
+
+### Rotas do Webhook
+
+| Método | Rota                          | Descrição                              |
+|--------|-------------------------------|----------------------------------------|
+| GET    | `/api/whatsapp/webhook`       | Handshake de verificação da Meta       |
+| POST   | `/api/whatsapp/webhook`       | Recebimento de mensagens               |
+
+### Comandos de Conversa (para clientes)
+
+| Comando          | Ação                                    |
+|------------------|-----------------------------------------|
+| `menu`           | Exibe o menu principal                  |
+| `1` ou `agendar` | Inicia o fluxo de agendamento          |
+| `2` ou `cancelar`| Inicia o fluxo de cancelamento         |
+| `3` ou `remarcar`| Inicia o fluxo de remarcar             |
+| `4` ou `consultar`| Mostra próximos agendamentos          |
+
+### Comandos Administrativos
+
+| Comando              | Ação                                |
+|----------------------|-------------------------------------|
+| `admin agenda`       | Mostra agenda do dia (admin)        |
+| `admin pendentes`    | Lista agendamentos pendentes        |
+| `admin clientes`     | Lista todos os clientes             |
+| `admin concluir <N>` | Marca agendamento como realizado    |
+| `admin desativar <N>`| Desativa um serviço                 |
+
+> **Nota:** Comandos administrativos requerem que o número esteja
+> listado em `ADMIN_WHATSAPP_NUMBERS`.
+
+### Modo Dry-Run
+
+Para desenvolvimento e testes, defina `WHATSAPP_DRY_RUN=true` no `.env`.
+Nesse modo, mensagens são apenas registradas sem envio real à API da Meta.
+
+### Segurança do Webhook
+
+- **Assinatura HMAC-SHA256:** cada POST é validado contra a assinatura
+  enviada pela Meta (`X-Hub-Signature-256`)
+- **Rate Limiting:** proteção contra flood (configurável via env)
+- **CSRF Exempt:** as rotas do webhook são eximidas da proteção CSRF
+  (a segurança é feita pela validação da assinatura)
+

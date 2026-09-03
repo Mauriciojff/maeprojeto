@@ -35,6 +35,10 @@ def init_db():
         os.makedirs(log_dir, exist_ok=True)
 
     from .models import Cliente, Servico, Agendamento, Usuario, Configuracao, Faturamento
+    from .wpp_models import (
+        MensagemRecebida, MensagemEnviada, SessaoConversa,
+        LogAuditoria, ConfigWhatsApp
+    )
 
     db.create_all()
 

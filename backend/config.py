@@ -44,9 +44,37 @@ class Config:
     HORA_FECHAMENTO = os.getenv('HORA_FECHAMENTO', '20:00')
     INTERVALO_MIN = int(os.getenv('INTERVALO_MIN', '60'))
 
-    # WhatsApp (integração por link wa.me)
+    # WhatsApp (integração por link wa.me - legado)
     WHATSAPP_BASE = os.getenv('WHATSAPP_BASE', 'https://wa.me')
     WHATSAPP_DDI = os.getenv('WHATSAPP_DDI', '55')
+
+    # ----------------------------------------------------------
+    # WhatsApp Business Cloud API (integração oficial)
+    # ----------------------------------------------------------
+    # Token de acesso permanente do app Meta (System User / WhatsApp)
+    WHATSAPP_TOKEN = os.getenv('WHATSAPP_TOKEN', '')
+    # ID do número de telefone da empresa (Phone Number ID)
+    WHATSAPP_PHONE_NUMBER_ID = os.getenv('WHATSAPP_PHONE_NUMBER_ID', '')
+    # Token de verificação para o handshake do webhook (GET)
+    WHATSAPP_VERIFY_TOKEN = os.getenv('WHATSAPP_VERIFY_TOKEN', '')
+    # Segredo usado para validar a assinatura X-Hub-Signature-256 dos webhooks
+    WHATSAPP_WEBHOOK_SECRET = os.getenv('WHATSAPP_WEBHOOK_SECRET', '')
+    # Números de WhatsApp autorizados a usar comandos administrativos
+    # (separados por vírgula, no formato 5511999999999)
+    ADMIN_WHATSAPP_NUMBERS = os.getenv('ADMIN_WHATSAPP_NUMBERS', '')
+    # URL base da Graph API
+    WHATSAPP_GRAPH_API = os.getenv(
+        'WHATSAPP_GRAPH_API',
+        'https://graph.facebook.com/v19.0'
+    )
+    # Versão da API (usada nas URLs)
+    WHATSAPP_API_VERSION = os.getenv('WHATSAPP_API_VERSION', 'v19.0')
+    # Habilitar/desabilitar o envio real de mensagens (útil em dev/testes)
+    WHATSAPP_DRY_RUN = os.getenv('WHATSAPP_DRY_RUN', 'false').lower() == 'true'
+
+    # Rate limiting do webhook do WhatsApp
+    WHATSAPP_RATE_LIMIT_WINDOW = int(os.getenv('WHATSAPP_RATE_LIMIT_WINDOW', '60'))
+    WHATSAPP_RATE_LIMIT_MAX = int(os.getenv('WHATSAPP_RATE_LIMIT_MAX', '60'))
 
     # Máximo de tentativas de login
     MAX_LOGIN_ATTEMPTS = 5

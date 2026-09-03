@@ -46,6 +46,7 @@ def create_app(config_class=Config):
     from .routes.servicos import servicos_bp
     from .routes.agenda import agenda_bp
     from .routes.faturamento import faturamento_bp
+    from .whatsapp.webhook import webhook_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -54,6 +55,12 @@ def create_app(config_class=Config):
     app.register_blueprint(servicos_bp, url_prefix='/servicos')
     app.register_blueprint(agenda_bp, url_prefix='/agenda')
     app.register_blueprint(faturamento_bp, url_prefix='/faturamento')
+    app.register_blueprint(webhook_bp)
+
+    # O webhook da Meta não envia token CSRF; eximimos suas views do CSRF
+    # (a segurança do endpoint é feita pela assinatura HMAC do webhook).
+    csrf.exempt(app.view_functions['webhook_whatsapp.verificar_webhook'])
+    csrf.exempt(app.view_functions['webhook_whatsapp.receber_webhook'])
 
     # Tratamento de erros
     _configurar_tratamento_erros(app)
